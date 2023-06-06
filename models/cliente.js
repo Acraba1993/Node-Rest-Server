@@ -42,4 +42,9 @@ const ClienteSchema = Schema({
     },
 });
 
-module.exports = model('Usuario',ClienteSchema);
+ClienteSchema.methods.toJSON = function () {
+    const {__v, password, ...cliente} = this.toObject ();
+    return cliente;
+}
+
+module.exports = model('Cliente',ClienteSchema);

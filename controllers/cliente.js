@@ -4,24 +4,37 @@ const bcryptjs = require ('bcryptjs');
 
 const Cliente = require ('../models/cliente');
 
-const clienteGet = (req = request, res = response) => {
-    const {q,nombre = 'No Name',apiKey} = req.query;
+const clienteGet = async (req = request, res = response) => {
+    // const {q,nombre = 'No Name',apiKey} = req.query;
+    const {limite = 5, desde = 0} = req.query; 
+    const query = {estado:true}
+
+    const [total,clientes] = await Promise.all([
+        Cliente.countDocuments(query),
+        Cliente.find(query)
+            .skip ( Number (desde))
+            .limit( Number (limite)),
+    ]);
     res.json({
-        msg:'get API - controlador',
-        q,
-        nombre,
-        apiKey
+        total,
+        clientes
     })
 }
 
-const clientePut = (req, res) => {
+const clientePut = async (req, res) => {
 
     const {id} = req.params;
+    const {_id, password, google, ...resto} = req.body;
 
-    res.json({
-        msg:'put API',
-        id
-    })
+    //validar contraseña
+    if(password){
+        const salt = bcryptjs.genSaltSync();
+        resto.password = bcryptjs.hashSync(password,salt);
+    }
+    
+    const cliente = await Cliente.findByIdAndUpdate(id, resto);
+
+    res.json(cliente);
 }
 
 const clientePost = async (req, res) => {
@@ -29,14 +42,6 @@ const clientePost = async (req, res) => {
     const {nombre,apellido,correo,telefono,password,rol} = req.body;
     const cliente = new Cliente({nombre,apellido,correo,telefono,password,rol});
 
-    //Verificar si el correo existe 
-    const existeEmail = await Cliente.findOne({correo});
-    if (existeEmail){
-        return res.status(400).json({
-            msg:"El correo ya existe"
-        });
-    }
-    
     //Verificar si el telefono existe 
     const existeTelefono = await Cliente.findOne({telefono});
     if (existeTelefono){
@@ -57,10 +62,13 @@ const clientePost = async (req, res) => {
     })
 }
 
-const clienteDelete = (req, res) => {
-    res.json({
-        msg:'delete API'
-    })
+const clienteDelete = async (req, res) => {
+    const {id} = req.params;
+
+    // const cliente = await Cliente.findByIdAndDelete(id);
+    const cliente = await Cliente.findByIdAndUpdate(id,{estado:false});
+
+    res.json(cliente);
 }
 
 const clientePatch = (req, res) => {
