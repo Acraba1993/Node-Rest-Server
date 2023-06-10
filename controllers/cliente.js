@@ -63,12 +63,13 @@ const clientePost = async (req, res) => {
 }
 
 const clienteDelete = async (req, res) => {
+
     const {id} = req.params;
 
-    // const cliente = await Cliente.findByIdAndDelete(id);
     const cliente = await Cliente.findByIdAndUpdate(id,{estado:false});
+    const usuarioAutenticado = req.cliente;
 
-    res.json(cliente);
+    res.json({cliente, usuarioAutenticado});
 }
 
 const clientePatch = (req, res) => {
